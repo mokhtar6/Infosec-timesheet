@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeamFlow — Task Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.14);
+    --text: #1a1916;
+    --text2: #6b6960;
+    --text3: #a8a69e;
+    --blue: #2563eb;
+    --blue-bg: #eff6ff;
+    --blue-text: #1d4ed8;
+    --green: #16a34a;
+    --green-bg: #f0fdf4;
+    --green-text: #15803d;
+    --amber: #d97706;
+    --amber-bg: #fffbeb;
+    --amber-text: #b45309;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --red-text: #b91c1c;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* LAYOUT */
+  .app { display: flex; height: 100vh; overflow: hidden; }
+  .sidebar { width: 240px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 0; overflow-y: auto; }
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar-logo { padding: 20px 20px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
+  .logo-icon { width: 32px; height: 32px; background: var(--text); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .logo-icon i { font-size: 18px; color: #fff; }
+  .logo-name { font-size: 15px; font-weight: 600; color: var(--text); }
+  .logo-sub { font-size: 11px; color: var(--text3); }
+  .sidebar-section { padding: 16px 12px 8px; }
+  .sidebar-label { font-size: 10px; font-weight: 600; color: var(--text3); letter-spacing: .08em; text-transform: uppercase; padding: 0 8px; margin-bottom: 4px; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; color: var(--text2); border: none; background: none; width: 100%; text-align: left; transition: all .15s; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--text); color: #fff; }
+  .nav-item i { font-size: 16px; opacity: .8; }
+  .nav-item.active i { opacity: 1; }
+  .nav-badge { margin-left: auto; font-size: 11px; font-family: 'DM Mono', monospace; background: rgba(0,0,0,0.08); color: inherit; padding: 1px 6px; border-radius: 20px; }
+  .nav-item.active .nav-badge { background: rgba(255,255,255,0.2); color: #fff; }
+  .member-avatar { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; flex-shrink: 0; }
+  .sidebar-footer { margin-top: auto; padding: 12px; border-top: 1px solid var(--border); }
+  .sync-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text3); padding: 6px 8px; }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  .sync-dot.offline { background: var(--amber); animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* TOPBAR */
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; gap: 12px; }
+  .topbar-title { font-size: 16px; font-weight: 600; flex: 1; }
+  .search-wrap { position: relative; }
+  .search-wrap i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--text3); pointer-events: none; }
+  .search-wrap input { padding: 8px 12px 8px 34px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface2); color: var(--text); width: 220px; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color .15s; }
+  .search-wrap input:focus { border-color: var(--blue); background: #fff; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: var(--radius-sm); font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer; border: 1px solid var(--border2); background: var(--surface); color: var(--text); transition: all .15s; font-weight: 500; }
+  .btn:hover { background: var(--surface2); }
+  .btn i { font-size: 16px; }
+  .btn-primary { background: var(--text); color: #fff; border-color: var(--text); }
+  .btn-primary:hover { background: #333; border-color: #333; }
+
+  /* FILTERS */
+  .filterbar { padding: 10px 24px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .filter-chip { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text2); transition: all .15s; font-weight: 500; }
+  .filter-chip:hover { border-color: var(--border2); color: var(--text); }
+  .filter-chip.on { background: var(--text); color: #fff; border-color: var(--text); }
+  .divider { width: 1px; height: 20px; background: var(--border); }
+
+  /* CONTENT */
+  .content { flex: 1; overflow-y: auto; padding: 24px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+  .stat-label { font-size: 11px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+  .stat-value { font-size: 26px; font-weight: 600; font-family: 'DM Mono', monospace; color: var(--text); line-height: 1; }
+  .stat-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+  .progress-wrap { height: 3px; background: var(--surface2); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width .4s ease; }
+
+  .list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .list-label { font-size: 13px; font-weight: 500; color: var(--text2); }
+
+  /* TASK CARDS */
+  .tasks-list { display: flex; flex-direction: column; gap: 6px; }
+  .task-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); transition: box-shadow .15s, border-color .15s; cursor: pointer; }
+  .task-card:hover { box-shadow: var(--shadow-md); border-color: var(--border2); }
+  .task-card.open { border-color: var(--border2); }
+  .task-accent { display: flex; }
+  .task-stripe { width: 3px; flex-shrink: 0; }
+  .s-pending .task-stripe { background: var(--amber); }
+  .s-inprogress .task-stripe { background: var(--blue); }
+  .s-done .task-stripe { background: var(--green); }
+  .s-blocked .task-stripe { background: var(--red); }
+  .task-body { flex: 1; padding: 12px 14px; }
+  .task-top { display: flex; align-items: center; gap: 10px; }
+  .task-check { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .15s; background: transparent; cursor: pointer; }
+  .task-check:hover { border-color: var(--green); background: var(--green-bg); }
+  .task-check.checked { background: var(--green); border-color: var(--green); }
+  .task-check.checked i { color: #fff; font-size: 12px; }
+  .task-name { flex: 1; font-size: 14px; font-weight: 500; color: var(--text); }
+  .task-name.done { text-decoration: line-through; color: var(--text3); }
+  .status-pill { padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .pill-pending { background: var(--amber-bg); color: var(--amber-text); }
+  .pill-inprogress { background: var(--blue-bg); color: var(--blue-text); }
+  .pill-done { background: var(--green-bg); color: var(--green-text); }
+  .pill-blocked { background: var(--red-bg); color: var(--red-text); }
+  .prio-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .prio-high { background: var(--red); }
+  .prio-medium { background: var(--amber); }
+  .prio-low { background: var(--green); }
+  .assignee-chip { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+  .task-meta { display: flex; align-items: center; gap: 10px; margin-top: 7px; padding-left: 30px; flex-wrap: wrap; }
+  .meta-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text3); }
+  .meta-item i { font-size: 13px; }
+  .meta-item.warn { color: var(--amber); }
+  .meta-item.err { color: var(--red); }
+  .tag { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 7px; font-size: 11px; color: var(--text2); font-family: 'DM Mono', monospace; }
+
+  /* EXPANDED */
+  .task-expand { display: none; padding: 0 14px 14px; padding-left: calc(14px + 3px); margin-left: 0; border-top: 1px solid var(--border); }
+  .task-card.open .task-expand { display: block; }
+  .expand-inner { padding-top: 12px; }
+  .task-desc { font-size: 13px; color: var(--text2); line-height: 1.65; margin-bottom: 12px; }
+  .reason-box { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: var(--radius-sm); margin-bottom: 12px; font-size: 13px; line-height: 1.5; }
+  .reason-box.pending { background: var(--amber-bg); color: var(--amber-text); border: 1px solid rgba(217,119,6,.2); }
+  .reason-box.blocked { background: var(--red-bg); color: var(--red-text); border: 1px solid rgba(220,38,38,.2); }
+  .reason-box i { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .expand-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .timer-btn { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-family: 'DM Mono', monospace; background: var(--surface2); border: 1px solid var(--border); color: var(--text2); cursor: pointer; transition: all .15s; }
+  .timer-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .timer-btn.running { background: var(--blue-bg); color: var(--blue-text); border-color: rgba(37,99,235,.2); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-danger { color: var(--red); border-color: rgba(220,38,38,.2); }
+  .btn-danger:hover { background: var(--red-bg); }
+
+  /* MODAL */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(2px); }
+  .overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: 14px; width: 540px; max-width: 96vw; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-md); border: 1px solid var(--border); }
+  .modal-header { padding: 20px 24px 0; display: flex; align-items: center; justify-content: space-between; }
+  .modal-header h2 { font-size: 16px; font-weight: 600; }
+  .modal-close { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 20px; padding: 4px; border-radius: 4px; display: flex; }
+  .modal-close:hover { color: var(--text); background: var(--surface2); }
+  .modal-body { padding: 20px 24px 24px; }
+  .form-row { margin-bottom: 14px; }
+  .form-row label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 5px; }
+  .form-row input, .form-row textarea, .form-row select {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border2); border-radius: var(--radius-sm);
+    font-size: 13px; font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--text);
+    outline: none; transition: border-color .15s; resize: vertical;
+  }
+  .form-row input:focus, .form-row textarea:focus, .form-row select:focus { border-color: var(--blue); }
+  .form-row textarea { min-height: 80px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .reason-row { display: none; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
+
+  /* LOADING */
+  .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; gap: 12px; color: var(--text3); font-size: 13px; }
+  .spinner { width: 24px; height: 24px; border: 2px solid var(--border2); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
+  .empty-state i { font-size: 48px; margin-bottom: 12px; display: block; opacity: .4; }
+  .empty-state p { font-size: 14px; }
+
+  /* TOAST */
+  .toast-wrap { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 999; }
+  .toast { background: var(--text); color: #fff; padding: 10px 16px; border-radius: var(--radius-sm); font-size: 13px; box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 8px; animation: slideIn .2s ease; }
+  .toast.err { background: var(--red); }
+  .toast.ok { background: var(--green); }
+  @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .stats-grid { grid-template-columns: repeat(2,1fr); }
+    .topbar { padding: 10px 16px; }
+    .content { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><i class="ti ti-layout-kanban"></i></div>
+      <div>
+        <div class="logo-name">TeamFlow</div>
+        <div class="logo-sub">Task Manager</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Views</div>
+      <button class="nav-item active" onclick="setView('all')" id="nav-all"><i class="ti ti-list"></i> All tasks <span class="nav-badge" id="b-all">0</span></button>
+      <button class="nav-item" onclick="setView('pending')" id="nav-pending"><i class="ti ti-clock"></i> Pending <span class="nav-badge" id="b-pending">0</span></button>
+      <button class="nav-item" onclick="setView('inprogress')" id="nav-inprogress"><i class="ti ti-player-play"></i> In progress <span class="nav-badge" id="b-inprogress">0</span></button>
+      <button class="nav-item" onclick="setView('done')" id="nav-done"><i class="ti ti-circle-check"></i> Completed <span class="nav-badge" id="b-done">0</span></button>
+      <button class="nav-item" onclick="setView('blocked')" id="nav-blocked"><i class="ti ti-ban"></i> Blocked <span class="nav-badge" id="b-blocked">0</span></button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Team</div>
+      <div id="member-nav"></div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sync-status">
+        <div class="sync-dot" id="sync-dot"></div>
+        <span id="sync-label">Connected to Supabase</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="view-title">All tasks</span>
+      <div class="search-wrap">
+        <i class="ti ti-search"></i>
+        <input type="text" id="search" placeholder="Search tasks…" oninput="render()">
+      </div>
+      <button class="btn" onclick="exportCSV()"><i class="ti ti-download"></i> Export</button>
+      <button class="btn btn-primary" onclick="openModal()"><i class="ti ti-plus"></i> New task</button>
+    </div>
+
+    <div class="filterbar">
+      <span style="font-size:12px;color:var(--text3);font-weight:500">Priority:</span>
+      <button class="filter-chip on" data-group="prio" data-val="all" onclick="setFilter(this,'prio','all')">All</button>
+      <button class="filter-chip" data-group="prio" data-val="high" onclick="setFilter(this,'prio','high')">High</button>
+      <button class="filter-chip" data-group="prio" data-val="medium" onclick="setFilter(this,'prio','medium')">Medium</button>
+      <button class="filter-chip" data-group="prio" data-val="low" onclick="setFilter(this,'prio','low')">Low</button>
+      <div class="divider"></div>
+      <span style="font-size:12px;color:var(--text3);font-weight:500">Sort:</span>
+      <button class="filter-chip on" data-group="sort" data-val="created" onclick="setFilter(this,'sort','created')">Newest</button>
+      <button class="filter-chip" data-group="sort" data-val="priority" onclick="setFilter(this,'sort','priority')">Priority</button>
+      <button class="filter-chip" data-group="sort" data-val="due" onclick="setFilter(this,'sort','due')">Due date</button>
+      <button class="filter-chip" data-group="sort" data-val="name" onclick="setFilter(this,'sort','name')">Name</button>
+    </div>
+
+    <div class="content">
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="list-header">
+        <span class="list-label" id="list-count">Loading…</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="list-label" id="pct-label">0%</span>
+          <div class="progress-wrap" style="width:100px"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="tasks-list" id="tasks-list">
+        <div class="loading"><div class="spinner"></div>Loading tasks…</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- NEW/EDIT MODAL -->
+<div class="overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal-box">
+    <div class="modal-header">
+      <h2 id="modal-title">New task</h2>
+      <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row"><label>Task title *</label><input type="text" id="f-title" placeholder="What needs to be done?"></div>
+      <div class="form-row"><label>Description</label><textarea id="f-desc" placeholder="Add details, context, or links…"></textarea></div>
+      <div class="form-grid">
+        <div class="form-row"><label>Assigned to</label>
+          <select id="f-assign">
+            <option value="">Unassigned</option>
+            <option>Ahmed</option><option>Sara</option><option>Omar</option><option>Lina</option><option>Karim</option>
+          </select>
+        </div>
+        <div class="form-row"><label>Priority</label>
+          <select id="f-priority">
+            <option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row"><label>Status</label>
+          <select id="f-status" onchange="toggleReasonRow()">
+            <option value="pending">Pending</option>
+            <option value="inprogress">In progress</option>
+            <option value="done">Done</option>
+            <option value="blocked">Blocked</option>
+          </select>
+        </div>
+        <div class="form-row"><label>Due date</label><input type="date" id="f-due"></div>
+      </div>
+      <div class="form-row reason-row" id="reason-row">
+        <label id="reason-label">Pending reason — waiting for…</label>
+        <input type="text" id="f-reason" placeholder="e.g. Waiting for design sign-off, API access…">
+      </div>
+      <div class="form-grid">
+        <div class="form-row"><label>Tags <span style="color:var(--text3)">(comma-separated)</span></label><input type="text" id="f-tags" placeholder="backend, api, urgent"></div>
+        <div class="form-row"><label>Estimated hours</label><input type="number" id="f-est" min="0" step="0.5" placeholder="0"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveTask()" id="save-btn">Save task</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://xruzxfanimgrwnxmpqpl.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhydXp4ZmFuaW1ncndueG1wcXBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMTYzODEsImV4cCI6MjA5NDg5MjM4MX0.H-EpZY-jBMGOIGMoUTstOvzmkBIf20-B9zr1eF97LDI';
+const HEADERS = { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+const TABLE = SUPABASE_URL + '/rest/v1/tasks';
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let tasks = [];
+let view = 'all';
+let filterPrio = 'all';
+let sortMode = 'created';
+let editId = null;
+let timers = {};
+
+const MEMBER_COLORS = { Ahmed:'#2563eb', Sara:'#16a34a', Omar:'#d97706', Lina:'#9333ea', Karim:'#dc2626' };
+const initials = n => n ? n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) : '?';
+const memberColor = n => MEMBER_COLORS[n] || '#888';
+
+// ── SUPABASE API ─────────────────────────────────────────────────────────────
+async function apiFetch(path, opts = {}) {
+  try {
+    const r = await fetch(TABLE + (path||''), { headers: HEADERS, ...opts });
+    if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.message || r.statusText); }
+    if (r.status === 204) return null;
+    return await r.json();
+  } catch(e) {
+    setSyncStatus(false);
+    toast('Database error: ' + e.message, 'err');
+    throw e;
+  }
+}
+
+async function loadTasks() {
+  document.getElementById('tasks-list').innerHTML = '<div class="loading"><div class="spinner"></div>Loading tasks…</div>';
+  try {
+    const data = await apiFetch('?order=created_at.desc&select=*');
+    tasks = (data || []).map(normalise);
+    setSyncStatus(true);
+    render();
+  } catch(e) {
+    document.getElementById('tasks-list').innerHTML = '<div class="empty-state"><i class="ti ti-wifi-off"></i><p>Could not connect to database.<br>Check your Supabase config.</p></div>';
+  }
+}
+
+async function createTask(t) {
+  const row = toRow(t);
+  const data = await apiFetch('', { method:'POST', body: JSON.stringify(row), headers: { ...HEADERS, 'Prefer':'return=representation' } });
+  return normalise(data[0]);
+}
+
+async function updateTask(id, fields) {
+  const row = toRow(fields);
+  await apiFetch('?id=eq.' + id, { method:'PATCH', body: JSON.stringify(row) });
+}
+
+async function deleteTaskDb(id) {
+  await apiFetch('?id=eq.' + id, { method:'DELETE' });
+}
+
+// Map DB row → app object
+function normalise(r) {
+  return {
+    id: r.id,
+    title: r.title,
+    desc: r.description || '',
+    assign: r.assigned_to || '',
+    priority: r.priority || 'medium',
+    status: r.status || 'pending',
+    due: r.due_date || '',
+    pendingWhy: r.pending_why || '',
+    tags: Array.isArray(r.tags) ? r.tags : (r.tags ? r.tags.replace(/[{}]/g,'').split(',').filter(Boolean) : []),
+    est: parseFloat(r.est_hours) || 0,
+    logged: parseFloat(r.logged_hours) || 0,
+    created: r.created_at,
+  };
+}
+
+// Map app object → DB row
+function toRow(t) {
+  const row = {};
+  if (t.title !== undefined) row.title = t.title;
+  if (t.desc !== undefined) row.description = t.desc;
+  if (t.assign !== undefined) row.assigned_to = t.assign || null;
+  if (t.priority !== undefined) row.priority = t.priority;
+  if (t.status !== undefined) row.status = t.status;
+  if (t.due !== undefined) row.due_date = t.due || null;
+  if (t.pendingWhy !== undefined) row.pending_why = t.pendingWhy;
+  if (t.tags !== undefined) row.tags = t.tags;
+  if (t.est !== undefined) row.est_hours = t.est;
+  if (t.logged !== undefined) row.logged_hours = t.logged;
+  return row;
+}
+
+// ── UI HELPERS ───────────────────────────────────────────────────────────────
+function toast(msg, type = '') {
+  const w = document.getElementById('toast-wrap');
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML = `<i class="ti ti-${type==='err'?'alert-circle':type==='ok'?'check':'info-circle'}"></i> ${msg}`;
+  w.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function setSyncStatus(ok) {
+  document.getElementById('sync-dot').className = 'sync-dot' + (ok ? '' : ' offline');
+  document.getElementById('sync-label').textContent = ok ? 'Connected to Supabase' : 'Connection error';
+}
+
+function setView(v) {
+  view = v;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById('nav-' + v);
+  if (el) el.classList.add('active');
+  const titles = { all:'All tasks', pending:'Pending tasks', inprogress:'In progress', done:'Completed', blocked:'Blocked' };
+  document.getElementById('view-title').textContent = titles[v] || v;
+  render();
+}
+
+function setFilter(btn, group, val) {
+  document.querySelectorAll(`.filter-chip[data-group="${group}"]`).forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  if (group === 'prio') filterPrio = val;
+  else sortMode = val;
+  render();
+}
+
+function handleOverlayClick(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+
+function getDueLabel(due, status) {
+  if (!due || status === 'done') return '';
+  const d = new Date(due), now = new Date(); now.setHours(0,0,0,0); d.setHours(0,0,0,0);
+  const diff = Math.round((d - now) / 86400000);
+  if (diff < 0) return `<span class="meta-item err"><i class="ti ti-calendar-x"></i>Overdue ${Math.abs(diff)}d</span>`;
+  if (diff === 0) return `<span class="meta-item warn"><i class="ti ti-calendar-event"></i>Due today</span>`;
+  if (diff <= 3) return `<span class="meta-item warn"><i class="ti ti-calendar"></i>${diff}d left</span>`;
+  return `<span class="meta-item"><i class="ti ti-calendar"></i>${d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</span>`;
+}
+
+function fmtTime(s) {
+  return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render() {
+  const q = (document.getElementById('search').value || '').toLowerCase();
+  const prioOrd = { high:0, medium:1, low:2 };
+
+  let filtered = tasks.filter(t => {
+    if (view !== 'all' && ['pending','inprogress','done','blocked'].includes(view) && t.status !== view) return false;
+    if (!['pending','inprogress','done','blocked','all'].includes(view) && t.assign !== view) return false;
+    if (filterPrio !== 'all' && t.priority !== filterPrio) return false;
+    if (q && !t.title.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q) && !t.assign.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if (sortMode === 'created') filtered.sort((a,b) => new Date(b.created) - new Date(a.created));
+  else if (sortMode === 'priority') filtered.sort((a,b) => prioOrd[a.priority] - prioOrd[b.priority]);
+  else if (sortMode === 'due') filtered.sort((a,b) => (a.due||'9') < (b.due||'9') ? -1 : 1);
+  else filtered.sort((a,b) => a.title.localeCompare(b.title));
+
+  // Badges
+  ['all','pending','inprogress','done','blocked'].forEach(s => {
+    const count = s === 'all' ? tasks.length : tasks.filter(t => t.status === s).length;
+    document.getElementById('b-' + s).textContent = count;
+  });
+
+  // Member nav
+  const members = [...new Set(tasks.map(t => t.assign).filter(Boolean))];
+  document.getElementById('member-nav').innerHTML = members.map(m => `
+    <button class="nav-item${view === m ? ' active' : ''}" onclick="setView('${m}')">
+      <span class="member-avatar" style="background:${memberColor(m)}20;color:${memberColor(m)}">${initials(m)}</span>
+      ${m} <span class="nav-badge">${tasks.filter(t => t.assign === m).length}</span>
+    </button>`).join('');
+
+  // Stats
+  const total = tasks.length, done = tasks.filter(t => t.status === 'done').length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  const overdue = tasks.filter(t => t.due && t.status !== 'done' && new Date(t.due) < new Date()).length;
+  const totalEst = tasks.reduce((a,t) => a + (t.est||0), 0);
+  const totalLog = tasks.reduce((a,t) => a + (t.logged||0), 0);
+  document.getElementById('prog').style.width = pct + '%';
+  document.getElementById('pct-label').textContent = pct + '%';
+  document.getElementById('list-count').textContent = filtered.length + ' task' + (filtered.length !== 1 ? 's' : '');
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total tasks</div><div class="stat-value">${tasks.length}</div><div class="stat-sub">${done} done · ${tasks.length - done} remaining</div><div class="progress-wrap"><div class="progress-fill" style="width:${pct}%"></div></div></div>
+    <div class="stat-card"><div class="stat-label">In progress</div><div class="stat-value">${tasks.filter(t=>t.status==='inprogress').length}</div><div class="stat-sub">${tasks.filter(t=>t.status==='blocked').length} blocked</div></div>
+    <div class="stat-card"><div class="stat-label">Hours tracked</div><div class="stat-value">${totalLog.toFixed(1)}</div><div class="stat-sub">of ${totalEst.toFixed(1)}h estimated</div></div>
+    <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-value" style="color:${overdue>0?'var(--red)':'inherit'}">${overdue}</div><div class="stat-sub">task${overdue!==1?'s':''} past due date</div></div>
+  `;
+
+  // Tasks
+  if (!filtered.length) {
+    document.getElementById('tasks-list').innerHTML = '<div class="empty-state"><i class="ti ti-mood-smile"></i><p>No tasks here yet</p></div>';
+    return;
+  }
+
+  const pillClass = { pending:'pill-pending', inprogress:'pill-inprogress', done:'pill-done', blocked:'pill-blocked' };
+  const pillLabel = { pending:'Pending', inprogress:'In progress', done:'Done', blocked:'Blocked' };
+
+  document.getElementById('tasks-list').innerHTML = filtered.map(t => {
+    const color = memberColor(t.assign);
+    const timerRunning = timers[t.id]?.running;
+    const loggedSecs = timers[t.id]?.elapsed || 0;
+    const totalLogged = (t.logged * 3600) + loggedSecs;
+    const tagsHtml = (t.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('');
+    const pendingHtml = (t.status === 'pending' || t.status === 'blocked') && t.pendingWhy
+      ? `<div class="reason-box ${t.status}"><i class="ti ti-${t.status==='blocked'?'ban':'clock-pause'}"></i><span><strong>${t.status === 'blocked' ? 'Blocked' : 'Pending'}:</strong> ${t.pendingWhy}</span></div>` : '';
+    return `
+    <div class="task-card s-${t.status}${document.getElementById('card-'+t.id)?.classList.contains('open')?' open':''}" id="card-${t.id}" onclick="toggleCard('${t.id}',event)">
+      <div class="task-accent">
+        <div class="task-stripe"></div>
+        <div class="task-body">
+          <div class="task-top">
+            <div class="task-check${t.status==='done'?' checked':''}" onclick="quickDone('${t.id}',event)">${t.status==='done'?'<i class="ti ti-check"></i>':''}</div>
+            <span class="task-name${t.status==='done'?' done':''}">${t.title}</span>
+            ${t.assign ? `<span class="assignee-chip" style="background:${color}18;color:${color}">${initials(t.assign)}</span>` : ''}
+            <span class="status-pill ${pillClass[t.status]}">${pillLabel[t.status]}</span>
+            <span class="prio-dot prio-${t.priority}" title="${t.priority} priority"></span>
+          </div>
+          <div class="task-meta">
+            ${getDueLabel(t.due, t.status)}
+            ${totalLogged > 0 ? `<span class="meta-item"><i class="ti ti-clock"></i>${(totalLogged/3600).toFixed(1)}h / ${t.est||'?'}h est.</span>` : ''}
+            ${tagsHtml}
+          </div>
+          <div class="task-expand" id="expand-${t.id}">
+            <div class="expand-inner">
+              ${t.desc ? `<p class="task-desc">${t.desc}</p>` : ''}
+              ${pendingHtml}
+              <div class="expand-actions">
+                <button class="timer-btn${timerRunning?' running':''}" id="timerbtn-${t.id}">
+                  <i class="ti ti-${timerRunning?'player-pause':'player-play'}"></i>
+                  <span id="timerlbl-${t.id}">${timerRunning ? fmtTime(loggedSecs) : 'Track time'}</span>
+                </button>
+                <button class="btn btn-sm" onclick="openEdit('${t.id}',event)"><i class="ti ti-edit"></i> Edit</button>
+                <button class="btn btn-sm" onclick="cycleStatus('${t.id}',event)"><i class="ti ti-refresh"></i> Cycle status</button>
+                <button class="btn btn-sm btn-danger" onclick="confirmDelete('${t.id}',event)"><i class="ti ti-trash"></i> Delete</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Bind timers
+  filtered.forEach(t => {
+    const btn = document.getElementById('timerbtn-' + t.id);
+    if (btn) btn.onclick = e => { e.stopPropagation(); toggleTimer(t.id); };
+    if (timers[t.id]?.running) {
+      const card = document.getElementById('card-' + t.id);
+      if (card) card.classList.add('open');
+    }
+  });
+}
+
+// ── INTERACTIONS ──────────────────────────────────────────────────────────────
+function toggleCard(id, e) {
+  if (e.target.closest('.expand-actions, .task-check, .timer-btn')) return;
+  const card = document.getElementById('card-' + id);
+  card.classList.toggle('open');
+}
+
+async function quickDone(id, e) {
+  e.stopPropagation();
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  const newStatus = t.status === 'done' ? 'pending' : 'done';
+  t.status = newStatus;
+  render();
+  try {
+    await updateTask(id, { status: newStatus });
+    toast(newStatus === 'done' ? '✓ Task marked done' : 'Task reopened', 'ok');
+  } catch(e) { t.status = newStatus === 'done' ? 'pending' : 'done'; render(); }
+}
+
+async function cycleStatus(id, e) {
+  e.stopPropagation();
+  const t = tasks.find(x => x.id === id);
+  const order = ['pending','inprogress','done','blocked'];
+  const next = order[(order.indexOf(t.status) + 1) % order.length];
+  t.status = next;
+  render();
+  try { await updateTask(id, { status: next }); }
+  catch(err) { loadTasks(); }
+}
+
+async function confirmDelete(id, e) {
+  e.stopPropagation();
+  if (!confirm('Delete this task permanently?')) return;
+  tasks = tasks.filter(t => t.id !== id);
+  render();
+  try {
+    await deleteTaskDb(id);
+    toast('Task deleted', '');
+  } catch(err) { loadTasks(); }
+}
+
+// ── TIMER ────────────────────────────────────────────────────────────────────
+function toggleTimer(id) {
+  if (timers[id]?.running) stopTimer(id);
+  else startTimer(id);
+}
+
+function startTimer(id) {
+  if (!timers[id]) timers[id] = { elapsed: 0, running: false, base: 0 };
+  timers[id].running = true;
+  timers[id].startedAt = Date.now();
+  timers[id].interval = setInterval(() => {
+    timers[id].elapsed = Math.floor((Date.now() - timers[id].startedAt) / 1000) + timers[id].base;
+    const lbl = document.getElementById('timerlbl-' + id);
+    const btn = document.getElementById('timerbtn-' + id);
+    if (lbl) { lbl.textContent = fmtTime(timers[id].elapsed); btn.classList.add('running'); btn.querySelector('i').className = 'ti ti-player-pause'; }
+  }, 1000);
+}
+
+async function stopTimer(id) {
+  const tmr = timers[id];
+  if (!tmr) return;
+  clearInterval(tmr.interval);
+  tmr.running = false;
+  tmr.base = tmr.elapsed;
+  const addedHours = tmr.elapsed / 3600;
+  tmr.elapsed = 0; tmr.base = 0;
+  const t = tasks.find(x => x.id === id);
+  if (t) {
+    t.logged = parseFloat((t.logged + addedHours).toFixed(3));
+    render();
+    try { await updateTask(id, { logged: t.logged }); toast(`+${addedHours.toFixed(2)}h logged`, 'ok'); }
+    catch(e) { loadTasks(); }
+  }
+}
+
+// ── MODAL ────────────────────────────────────────────────────────────────────
+function openModal() {
+  editId = null;
+  document.getElementById('modal-title').textContent = 'New task';
+  document.getElementById('save-btn').textContent = 'Save task';
+  ['f-title','f-desc','f-reason','f-tags'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-assign').value = '';
+  document.getElementById('f-priority').value = 'medium';
+  document.getElementById('f-status').value = 'pending';
+  document.getElementById('f-due').value = '';
+  document.getElementById('f-est').value = '';
+  toggleReasonRow();
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('f-title').focus(), 100);
+}
+
+function openEdit(id, e) {
+  e.stopPropagation();
+  editId = id;
+  const t = tasks.find(x => x.id === id);
+  document.getElementById('modal-title').textContent = 'Edit task';
+  document.getElementById('save-btn').textContent = 'Update task';
+  document.getElementById('f-title').value = t.title;
+  document.getElementById('f-desc').value = t.desc || '';
+  document.getElementById('f-assign').value = t.assign || '';
+  document.getElementById('f-priority').value = t.priority;
+  document.getElementById('f-status').value = t.status;
+  document.getElementById('f-due').value = t.due || '';
+  document.getElementById('f-reason').value = t.pendingWhy || '';
+  document.getElementById('f-tags').value = (t.tags || []).join(', ');
+  document.getElementById('f-est').value = t.est || '';
+  toggleReasonRow();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+
+function toggleReasonRow() {
+  const s = document.getElementById('f-status').value;
+  const row = document.getElementById('reason-row');
+  row.style.display = (s === 'pending' || s === 'blocked') ? 'block' : 'none';
+  document.getElementById('reason-label').textContent = s === 'blocked' ? 'Blocked reason — what is blocking this?' : 'Pending reason — waiting for…';
+}
+
+async function saveTask() {
+  const title = document.getElementById('f-title').value.trim();
+  if (!title) { toast('Please enter a task title', 'err'); return; }
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  const data = {
+    title,
+    desc: document.getElementById('f-desc').value.trim(),
+    assign: document.getElementById('f-assign').value,
+    priority: document.getElementById('f-priority').value,
+    status: document.getElementById('f-status').value,
+    due: document.getElementById('f-due').value,
+    pendingWhy: document.getElementById('f-reason').value.trim(),
+    tags: document.getElementById('f-tags').value.split(',').map(s=>s.trim()).filter(Boolean),
+    est: parseFloat(document.getElementById('f-est').value) || 0,
+  };
+  try {
+    if (editId) {
+      await updateTask(editId, data);
+      const i = tasks.findIndex(t => t.id === editId);
+      if (i >= 0) tasks[i] = { ...tasks[i], ...data };
+      toast('Task updated', 'ok');
+    } else {
+      data.logged = 0;
+      const created = await createTask(data);
+      tasks.unshift(created);
+      toast('Task created', 'ok');
+    }
+    closeModal();
+    render();
+  } catch(e) {
+    toast('Failed to save: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = editId ? 'Update task' : 'Save task';
+  }
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const headers = ['Title','Description','Assigned To','Priority','Status','Due Date','Pending Reason','Tags','Est Hours','Logged Hours'];
+  const rows = tasks.map(t => [t.title,t.desc||'',t.assign||'',t.priority,t.status,t.due||'',t.pendingWhy||'',(t.tags||[]).join(';'),t.est||0,(+t.logged||0).toFixed(2)]);
+  const csv = [headers,...rows].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'teamflow-tasks.csv';
+  a.click();
+  toast('CSV exported', 'ok');
+}
+
+// Keyboard shortcut
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openModal(); }
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loadTasks();
+</script>
+</body>
+</html>
